@@ -3,72 +3,85 @@
 __all__ = ['twitter_download']
 
 from ..common import *
-from .vine import vine_download
+from .universal import *
+
+def extract_m3u(source):
+    r1 = get_content(source)
+    s1 = re.findall(r'(/ext_tw_video/.*)', r1)
+    s1 += re.findall(r'(/amplify_video/.*)', r1)
+    r2 = get_content('https://video.twimg.com%s' % s1[-1])
+    s2 = re.findall(r'(/ext_tw_video/.*)', r2)
+    s2 += re.findall(r'(/amplify_video/.*)', r2)
+    return ['https://video.twimg.com%s' % i for i in s2]
 
 def twitter_download(url, output_dir='.', merge=True, info_only=False, **kwargs):
-    html = get_html(url)
-    screen_name = r1(r'data-screen-name="([^"]*)"', html) or \
-        r1(r'<meta name="twitter:title" content="([^"]*)"', html)
-    item_id = r1(r'data-item-id="([^"]*)"', html) or \
-        r1(r'<meta name="twitter:site:id" content="([^"]*)"', html)
+    headers = {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:88.0) Gecko/20100101 Firefox/88.0',
+        'Accept-Encoding': 'gzip, deflate',
+        'Accept': '*/*'
+    }
+
+    if re.match(r'https?://pbs\.twimg\.com', url):
+        universal_download(url, output_dir, merge=merge, info_only=info_only, **kwargs)
+        return
+
+    if re.match(r'https?://mobile', url): # normalize mobile URL
+        url = 'https://' + match1(url, r'//mobile\.(.+)')
+
+    if re.match(r'https?://twitter\.com/i/moments/', url): # FIXME: moments
+        html = get_html(url, faker=True)
+        paths = re.findall(r'data-permalink-path="([^"]+)"', html)
+        for path in paths:
+            twitter_download('https://twitter.com' + path,
+                             output_dir=output_dir,
+                             merge=merge,
+                             info_only=info_only,
+                             **kwargs)
+        return
+
+    m = re.match(r'^https?://(mobile\.)?(x|twitter)\.com/([^/]+)/status/(\d+)', url)
+    assert m
+    screen_name, item_id = m.group(3), m.group(4)
     page_title = "{} [{}]".format(screen_name, item_id)
 
-    try: # extract images
-        urls = re.findall(r'property="og:image"\s*content="([^"]+:large)"', html)
-        assert urls
-        images = []
-        for url in urls:
-            url = ':'.join(url.split(':')[:-1]) + ':orig'
-            filename = parse.unquote(url.split('/')[-1])
-            title = '.'.join(filename.split('.')[:-1])
-            ext = url.split(':')[-2].split('.')[-1]
-            size = int(get_head(url)['Content-Length'])
-            images.append({'title': title,
-                           'url': url,
-                           'ext': ext,
-                           'size': size})
-        size = sum([image['size'] for image in images])
-        print_info(site_info, page_title, images[0]['ext'], size)
+    # FIXME: this API won't work for protected or nsfw contents
+    api_url = 'https://cdn.syndication.twimg.com/tweet-result?id=%s&token=!' % item_id
+    content = get_content(api_url)
+    info = json.loads(content)
 
-        if not info_only:
-            for image in images:
-                title = image['title']
-                ext = image['ext']
-                size = image['size']
-                url = image['url']
-                print_info(site_info, title, ext, size)
-                download_urls([url], title, ext, size,
-                              output_dir=output_dir)
+    author = info['user']['name']
+    url = 'https://twitter.com/%s/status/%s' % (info['user']['screen_name'], item_id)
+    full_text = info['text']
 
-    except: # extract video
-        # always use i/cards or videos url
-        if not re.match(r'https?://twitter.com/i/', url):
-            url = r1(r'<meta\s*property="og:video:url"\s*content="([^"]+)"', html)
-            if not url:
-                url = 'https://twitter.com/i/videos/%s' % item_id
-            html = get_content(url)
+    if 'photos' in info:
+        for photo in info['photos']:
+            photo_url = photo['url']
+            title = item_id + '_' + photo_url.split('.')[-2].split('/')[-1]
+            urls = [ photo_url + ':orig' ]
+            size = urls_size(urls, headers=headers)
+            ext = photo_url.split('.')[-1]
 
-        data_config = r1(r'data-config="([^"]*)"', html) or \
-            r1(r'data-player-config="([^"]*)"', html)
-        i = json.loads(unescape_html(data_config))
-        if 'video_url' in i:
-            source = i['video_url']
-            if not item_id: page_title = i['tweet_id']
-        elif 'playlist' in i:
-            source = i['playlist'][0]['source']
-            if not item_id: page_title = i['playlist'][0]['contentId']
-        elif 'vmap_url' in i:
-            vmap_url = i['vmap_url']
-            vmap = get_content(vmap_url)
-            source = r1(r'<MediaFile>\s*<!\[CDATA\[(.*)\]\]>', vmap)
-            if not item_id: page_title = i['tweet_id']
+            print_info(site_info, title, ext, size)
+            if not info_only:
+                download_urls(urls, title, ext, size, output_dir, merge=merge)
 
-        mime, ext, size = url_info(source)
+    if 'video' in info:
+        for mediaDetail in info['mediaDetails']:
+            if 'video_info' not in mediaDetail: continue
+            variants = mediaDetail['video_info']['variants']
+            variants = sorted(variants, key=lambda kv: kv.get('bitrate', 0))
+            title = item_id + '_' + variants[-1]['url'].split('/')[-1].split('?')[0].split('.')[0]
+            urls = [ variants[-1]['url'] ]
+            size = urls_size(urls, headers=headers)
+            mime, ext = variants[-1]['content_type'], 'mp4'
 
-        print_info(site_info, page_title, mime, size)
-        if not info_only:
-            download_urls([source], page_title, ext, size, output_dir, merge=merge)
+            print_info(site_info, title, ext, size)
+            if not info_only:
+                download_urls(urls, title, ext, size, output_dir, merge=merge, headers=headers)
 
-site_info = "Twitter.com"
+    # TODO: should we deal with quoted tweets?
+
+
+site_info = "X.com"
 download = twitter_download
 download_playlist = playlist_not_supported('twitter')

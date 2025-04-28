@@ -1,22 +1,34 @@
 # You-Get
 
+[![Build Status](https://github.com/soimort/you-get/workflows/develop/badge.svg)](https://github.com/soimort/you-get/actions)
 [![PyPI version](https://img.shields.io/pypi/v/you-get.svg)](https://pypi.python.org/pypi/you-get/)
-[![Build Status](https://travis-ci.org/soimort/you-get.svg)](https://travis-ci.org/soimort/you-get)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/soimort/you-get?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
+**NOTICE (30 May 2022): Support for Python 3.5, 3.6 and 3.7 will eventually be dropped. ([see details here](https://github.com/soimort/you-get/wiki/TLS-1.3-post-handshake-authentication-(PHA)))**
+
+**NOTICE (8 Mar 2019): Read [this](https://github.com/soimort/you-get/blob/develop/CONTRIBUTING.md) if you are looking for the conventional "Issues" tab.**
+
+---
 
 [You-Get](https://you-get.org/) is a tiny command-line utility to download media contents (videos, audios, images) from the Web, in case there is no other handy way to do it.
 
-Here's how you use `you-get` to download a video from [this web page](http://www.fsf.org/blogs/rms/20140407-geneva-tedx-talk-free-software-free-society):
+Here's how you use `you-get` to download a video from [YouTube](https://www.youtube.com/watch?v=jNQXAC9IVRw):
 
 ```console
-$ you-get http://www.fsf.org/blogs/rms/20140407-geneva-tedx-talk-free-software-free-society
-Site:       fsf.org
-Title:      TEDxGE2014_Stallman05_LQ
-Type:       WebM video (video/webm)
-Size:       27.12 MiB (28435804 Bytes)
+$ you-get 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
+site:                YouTube
+title:               Me at the zoo
+stream:
+    - itag:          43
+      container:     webm
+      quality:       medium
+      size:          0.5 MiB (564215 bytes)
+    # download-with: you-get --itag=43 [URL]
 
-Downloading TEDxGE2014_Stallman05_LQ.webm ...
-100.0% ( 27.1/27.1 MB) ├████████████████████████████████████████┤[1/1]   12 MB/s
+Downloading Me at the zoo.webm ...
+ 100% (  0.5/  0.5MB) ├██████████████████████████████████┤[1/1]    6 MB/s
+
+Saving Me at the zoo.en.srt ... Done.
 ```
 
 And here's why you might want to use it:
@@ -37,53 +49,59 @@ Interested? [Install it](#installation) now and [get started by examples](#getti
 
 Are you a Python programmer? Then check out [the source](https://github.com/soimort/you-get) and fork it!
 
-![](http://i.imgur.com/GfthFAz.png)
+![](https://i.imgur.com/GfthFAz.png)
 
 ## Installation
 
 ### Prerequisites
 
-The following dependencies are required and must be installed separately, unless you are using a pre-built package on Windows:
+The following dependencies are recommended:
 
-* **[Python 3](https://www.python.org/downloads/)**
-* **[FFmpeg](https://www.ffmpeg.org/)** (strongly recommended) or [Libav](https://libav.org/)
+* **[Python](https://www.python.org/downloads/)**  3.7.4 or above
+* **[FFmpeg](https://www.ffmpeg.org/)** 1.0 or above
 * (Optional) [RTMPDump](https://rtmpdump.mplayerhq.hu/)
 
 ### Option 1: Install via pip
 
-The official release of `you-get` is distributed on [PyPI](https://pypi.python.org/pypi/you-get), and can be installed easily from a PyPI mirror via the [pip](https://en.wikipedia.org/wiki/Pip_\(package_manager\)) package manager. Note that you must use the Python 3 version of `pip`:
+The official release of `you-get` is distributed on [PyPI](https://pypi.python.org/pypi/you-get), and can be installed easily from a PyPI mirror via the [pip](https://en.wikipedia.org/wiki/Pip_\(package_manager\)) package manager: (Note that you must use the Python 3 version of `pip`)
 
-    $ pip3 install you-get
+    $ pip install you-get
 
-### Option 2: Install via [Antigen](https://github.com/zsh-users/antigen)
+### Option 2: Install via [Antigen](https://github.com/zsh-users/antigen) (for Zsh users)
 
 Add the following line to your `.zshrc`:
 
     antigen bundle soimort/you-get
 
-### Option 3: Use a pre-built package (Windows only)
-
-Download the `exe` (standalone) or `7z` (all dependencies included) from: <https://github.com/soimort/you-get/releases/latest>.
-
-### Option 4: Download from GitHub
+### Option 3: Download from GitHub
 
 You may either download the [stable](https://github.com/soimort/you-get/archive/master.zip) (identical with the latest release on PyPI) or the [develop](https://github.com/soimort/you-get/archive/develop.zip) (more hotfixes, unstable features) branch of `you-get`. Unzip it, and put the directory containing the `you-get` script into your `PATH`.
 
 Alternatively, run
 
 ```
-$ [sudo] python3 setup.py install
+$ cd path/to/you-get
+$ [sudo] python -m pip install .
 ```
 
 Or
 
 ```
-$ python3 setup.py install --user
+$ cd path/to/you-get
+$ python -m pip install . --user
 ```
 
-to install `you-get` to a permanent path.
+to install `you-get` to a permanent path. (And don't omit the dot `.` representing the current directory)
 
-### Option 5: Git clone
+You can also use the [pipenv](https://pipenv.pypa.io/en/latest) to install the `you-get` in the Python virtual environment.
+
+```
+$ pipenv install -e .
+$ pipenv run you-get --version
+you-get: version 0.4.1555, a tiny downloader that scrapes the web.
+```
+
+### Option 4: Git clone
 
 This is the recommended way for all developers, even if you don't often code in Python.
 
@@ -91,20 +109,54 @@ This is the recommended way for all developers, even if you don't often code in 
 $ git clone git://github.com/soimort/you-get.git
 ```
 
-Then put the cloned directory into your `PATH`, or run `./setup.py install` to install `you-get` to a permanent path.
+Then put the cloned directory into your `PATH`, or run `python -m pip install path/to/you-get` to install `you-get` to a permanent path.
+
+### Option 5: Homebrew (Mac only)
+
+You can install `you-get` easily via:
+
+```
+$ brew install you-get
+```
+
+### Option 6: pkg (FreeBSD only)
+
+You can install `you-get` easily via:
+
+```
+# pkg install you-get
+```
+
+### Option 7: Flox (Mac, Linux, and Windows WSL)
+
+You can install `you-get` easily via:
+
+```
+$ flox install you-get
+```
+
+### Shell completion
+
+Completion definitions for Bash, Fish and Zsh can be found in [`contrib/completion`](https://github.com/soimort/you-get/tree/develop/contrib/completion). Please consult your shell's manual for how to take advantage of them.
 
 ## Upgrading
 
 Based on which option you chose to install `you-get`, you may upgrade it via:
 
 ```
-$ pip3 install --upgrade you-get
+$ pip install --upgrade you-get
 ```
 
 or download the latest release via:
 
 ```
 $ you-get https://github.com/soimort/you-get/archive/master.zip
+```
+
+In order to get the latest ```develop``` branch without messing up the PIP, you can try:
+
+```
+$ pip install --upgrade --force-reinstall git+https://github.com/soimort/you-get@develop
 ```
 
 ## Getting Started
@@ -118,22 +170,54 @@ $ you-get -i 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
 site:                YouTube
 title:               Me at the zoo
 streams:             # Available quality and codecs
+    [ DASH ] ____________________________________
+    - itag:          242
+      container:     webm
+      quality:       320x240
+      size:          0.6 MiB (618358 bytes)
+    # download-with: you-get --itag=242 [URL]
+
+    - itag:          395
+      container:     mp4
+      quality:       320x240
+      size:          0.5 MiB (550743 bytes)
+    # download-with: you-get --itag=395 [URL]
+
+    - itag:          133
+      container:     mp4
+      quality:       320x240
+      size:          0.5 MiB (498558 bytes)
+    # download-with: you-get --itag=133 [URL]
+
+    - itag:          278
+      container:     webm
+      quality:       192x144
+      size:          0.4 MiB (392857 bytes)
+    # download-with: you-get --itag=278 [URL]
+
+    - itag:          160
+      container:     mp4
+      quality:       192x144
+      size:          0.4 MiB (370882 bytes)
+    # download-with: you-get --itag=160 [URL]
+
+    - itag:          394
+      container:     mp4
+      quality:       192x144
+      size:          0.4 MiB (367261 bytes)
+    # download-with: you-get --itag=394 [URL]
+
     [ DEFAULT ] _________________________________
     - itag:          43
       container:     webm
       quality:       medium
-      size:          0.5 MiB (564215 bytes)
+      size:          0.5 MiB (568748 bytes)
     # download-with: you-get --itag=43 [URL]
 
     - itag:          18
       container:     mp4
-      quality:       medium
-    # download-with: you-get --itag=18 [URL]
-
-    - itag:          5
-      container:     flv
       quality:       small
-    # download-with: you-get --itag=5 [URL]
+    # download-with: you-get --itag=18 [URL]
 
     - itag:          36
       container:     3gp
@@ -146,23 +230,24 @@ streams:             # Available quality and codecs
     # download-with: you-get --itag=17 [URL]
 ```
 
-The format marked with `DEFAULT` is the one you will get by default. If that looks cool to you, download it:
+By default, the one on the top is the one you will get. If that looks cool to you, download it:
 
 ```
 $ you-get 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
 site:                YouTube
 title:               Me at the zoo
 stream:
-    - itag:          43
+    - itag:          242
       container:     webm
-      quality:       medium
-      size:          0.5 MiB (564215 bytes)
-    # download-with: you-get --itag=43 [URL]
+      quality:       320x240
+      size:          0.6 MiB (618358 bytes)
+    # download-with: you-get --itag=242 [URL]
 
-Downloading zoo.webm ...
-100.0% (  0.5/0.5  MB) ├████████████████████████████████████████┤[1/1]    7 MB/s
+Downloading Me at the zoo.webm ...
+ 100% (  0.6/  0.6MB) ├██████████████████████████████████████████████████████████████████████████████┤[2/2]    2 MB/s
+Merging video parts... Merged into Me at the zoo.webm
 
-Saving Me at the zoo.en.srt ...Done.
+Saving Me at the zoo.en.srt ... Done.
 ```
 
 (If a YouTube video has any closed captions, they will be downloaded together with the video file, in SubRip subtitle format.)
@@ -191,25 +276,20 @@ Type:       JPEG Image (image/jpeg)
 Size:       0.06 MiB (66482 Bytes)
 
 Downloading rms.jpg ...
-100.0% (  0.1/0.1  MB) ├████████████████████████████████████████┤[1/1]  127 kB/s
+ 100% (  0.1/  0.1MB) ├████████████████████████████████████████┤[1/1]  127 kB/s
 ```
 
 Otherwise, `you-get` will scrape the web page and try to figure out if there's anything interesting to you:
 
 ```
-$ you-get http://kopasas.tumblr.com/post/69361932517
+$ you-get https://kopasas.tumblr.com/post/69361932517
 Site:       Tumblr.com
-Title:      kopasas
-Type:       Unknown type (None)
-Size:       0.51 MiB (536583 Bytes)
-
-Site:       Tumblr.com
-Title:      tumblr_mxhg13jx4n1sftq6do1_1280
+Title:      [tumblr] tumblr_mxhg13jx4n1sftq6do1_640
 Type:       Portable Network Graphics (image/png)
-Size:       0.51 MiB (536583 Bytes)
+Size:       0.11 MiB (118484 Bytes)
 
-Downloading tumblr_mxhg13jx4n1sftq6do1_1280.png ...
-100.0% (  0.5/0.5  MB) ├████████████████████████████████████████┤[1/1]   22 MB/s
+Downloading [tumblr] tumblr_mxhg13jx4n1sftq6do1_640.png ...
+ 100% (  0.1/  0.1MB) ├████████████████████████████████████████┤[1/1]   22 MB/s
 ```
 
 **Note:**
@@ -262,7 +342,7 @@ However, the system proxy setting (i.e. the environment variable `http_proxy`) i
 
 ### Watch a video
 
-Use the `--player`/`-p` option to feed the video into your media player of choice, e.g. `mplayer` or `vlc`, instead of downloading it:
+Use the `--player`/`-p` option to feed the video into your media player of choice, e.g. `mpv` or `vlc`, instead of downloading it:
 
 ```
 $ you-get -p vlc 'https://www.youtube.com/watch?v=jNQXAC9IVRw'
@@ -299,81 +379,82 @@ Use `--url`/`-u` to get a list of downloadable resource URLs extracted from the 
 | Site | URL | Videos? | Images? | Audios? |
 | :--: | :-- | :-----: | :-----: | :-----: |
 | **YouTube** | <https://www.youtube.com/>    |✓| | |
-| **Twitter** | <https://twitter.com/>        |✓|✓| |
-| VK          | <http://vk.com/>              |✓| | |
-| Vine        | <https://vine.co/>            |✓| | |
+| **X (Twitter)** | <https://x.com/>        |✓|✓| |
+| VK          | <https://vk.com/>              |✓|✓| |
 | Vimeo       | <https://vimeo.com/>          |✓| | |
-| Vidto       | <http://vidto.me/>            |✓| | |
-| Videomega   | <http://videomega.tv/>        |✓| | |
-| Veoh        | <http://www.veoh.com/>        |✓| | |
+| Veoh        | <https://www.veoh.com/>        |✓| | |
 | **Tumblr**  | <https://www.tumblr.com/>     |✓|✓|✓|
-| TED         | <http://www.ted.com/>         |✓| | |
+| TED         | <https://www.ted.com/>         |✓| | |
 | SoundCloud  | <https://soundcloud.com/>     | | |✓|
+| SHOWROOM    | <https://www.showroom-live.com/> |✓| | |
 | Pinterest   | <https://www.pinterest.com/>  | |✓| |
-| MusicPlayOn | <http://en.musicplayon.com/>  |✓| | |
-| MTV81       | <http://www.mtv81.com/>       |✓| | |
+| MTV81       | <https://www.mtv81.com/>       |✓| | |
 | Mixcloud    | <https://www.mixcloud.com/>   | | |✓|
-| Metacafe    | <http://www.metacafe.com/>    |✓| | |
-| Magisto     | <http://www.magisto.com/>     |✓| | |
+| Metacafe    | <https://www.metacafe.com/>    |✓| | |
+| Magisto     | <https://www.magisto.com/>     |✓| | |
 | Khan Academy | <https://www.khanacademy.org/> |✓| | |
-| JPopsuki TV | <http://www.jpopsuki.tv/>     |✓| | |
 | Internet Archive | <https://archive.org/>   |✓| | |
 | **Instagram** | <https://instagram.com/>    |✓|✓| |
-| InfoQ       | <http://www.infoq.com/presentations/> |✓| | |
-| Imgur       | <http://imgur.com/>           | |✓| |
-| Heavy Music Archive | <http://www.heavy-music.ru/> | | |✓|
-| **Google+** | <https://plus.google.com/>    |✓|✓| |
-| Freesound   | <http://www.freesound.org/>   | | |✓|
+| InfoQ       | <https://www.infoq.com/presentations/> |✓| | |
+| Imgur       | <https://imgur.com/>           | |✓| |
+| Heavy Music Archive | <https://www.heavy-music.ru/> | | |✓|
+| Freesound   | <https://www.freesound.org/>   | | |✓|
 | Flickr      | <https://www.flickr.com/>     |✓|✓| |
-| FC2 Video   | <http://video.fc2.com/>       |✓| | |
+| FC2 Video   | <https://video.fc2.com/>       |✓| | |
 | Facebook    | <https://www.facebook.com/>   |✓| | |
-| eHow        | <http://www.ehow.com/>        |✓| | |
-| Dailymotion | <http://www.dailymotion.com/> |✓| | |
-| CBS         | <http://www.cbs.com/>         |✓| | |
-| Bandcamp    | <http://bandcamp.com/>        | | |✓|
-| AliveThai   | <http://alive.in.th/>         |✓| | |
-| interest.me | <http://ch.interest.me/tvn>   |✓| | |
-| **755<br/>ナナゴーゴー** | <http://7gogo.jp/> |✓|✓| |
-| **niconico<br/>ニコニコ動画** | <http://www.nicovideo.jp/> |✓| | |
-| **163<br/>网易视频<br/>网易云音乐** | <http://v.163.com/><br/><http://music.163.com/> |✓| |✓|
-| 56网     | <http://www.56.com/>           |✓| | |
-| **AcFun** | <http://www.acfun.tv/>        |✓| | |
-| **Baidu<br/>百度贴吧** | <http://tieba.baidu.com/> |✓|✓| |
-| 爆米花网 | <http://www.baomihua.com/>     |✓| | |
-| **bilibili<br/>哔哩哔哩** | <http://www.bilibili.com/> |✓| | |
-| Dilidili | <http://www.dilidili.com/>     |✓| | |
-| 豆瓣     | <http://www.douban.com/>       | | |✓|
-| 斗鱼     | <http://www.douyutv.com/>      |✓| | |
-| Panda<br/>熊猫 | <http://www.panda.tv/>      |✓| | |
-| 凤凰视频 | <http://v.ifeng.com/>          |✓| | |
-| 风行网   | <http://www.fun.tv/>           |✓| | |
-| iQIYI<br/>爱奇艺 | <http://www.iqiyi.com/> |✓| | |
-| 激动网   | <http://www.joy.cn/>           |✓| | |
-| 酷6网    | <http://www.ku6.com/>          |✓| | |
-| 酷狗音乐 | <http://www.kugou.com/>        | | |✓|
-| 酷我音乐 | <http://www.kuwo.cn/>          | | |✓|
-| 乐视网   | <http://www.le.com/>           |✓| | |
-| 荔枝FM   | <http://www.lizhi.fm/>         | | |✓|
-| 秒拍     | <http://www.miaopai.com/>      |✓| | |
-| MioMio弹幕网 | <http://www.miomio.tv/>    |✓| | |
+| eHow        | <https://www.ehow.com/>        |✓| | |
+| Dailymotion | <https://www.dailymotion.com/> |✓| | |
+| Coub        | <https://coub.com/>            |✓| | |
+| CBS         | <https://www.cbs.com/>         |✓| | |
+| Bandcamp    | <https://bandcamp.com/>        | | |✓|
+| AliveThai   | <https://alive.in.th/>         |✓| | |
+| interest.me | <https://ch.interest.me/tvn>   |✓| | |
+| **755<br/>ナナゴーゴー** | <https://7gogo.jp/> |✓|✓| |
+| **niconico<br/>ニコニコ動画** | <https://www.nicovideo.jp/> |✓| | |
+| **163<br/>网易视频<br/>网易云音乐** | <https://v.163.com/><br/><https://music.163.com/> |✓| |✓|
+| 56网     | <https://www.56.com/>           |✓| | |
+| **AcFun** | <https://www.acfun.cn/>        |✓| | |
+| **Baidu<br/>百度贴吧** | <https://tieba.baidu.com/> |✓|✓| |
+| 爆米花网 | <https://www.baomihua.com/>     |✓| | |
+| **bilibili<br/>哔哩哔哩** | <https://www.bilibili.com/> |✓|✓|✓|
+| 豆瓣     | <https://www.douban.com/>       |✓| |✓|
+| 斗鱼     | <https://www.douyutv.com/>      |✓| | |
+| 凤凰视频 | <https://v.ifeng.com/>          |✓| | |
+| 风行网   | <https://www.fun.tv/>           |✓| | |
+| iQIYI<br/>爱奇艺 | <https://www.iqiyi.com/> |✓| | |
+| 激动网   | <https://www.joy.cn/>           |✓| | |
+| 酷6网    | <https://www.ku6.com/>          |✓| | |
+| 酷狗音乐 | <https://www.kugou.com/>        | | |✓|
+| 酷我音乐 | <https://www.kuwo.cn/>          | | |✓|
+| 乐视网   | <https://www.le.com/>           |✓| | |
+| 荔枝FM   | <https://www.lizhi.fm/>         | | |✓|
+| 懒人听书 | <https://www.lrts.me/>          | | |✓|
+| 秒拍     | <https://www.miaopai.com/>      |✓| | |
+| MioMio弹幕网 | <https://www.miomio.tv/>    |✓| | |
+| MissEvan<br/>猫耳FM | <https://www.missevan.com/> | | |✓|
 | 痞客邦   | <https://www.pixnet.net/>      |✓| | |
-| PPTV聚力 | <http://www.pptv.com/>         |✓| | |
-| 齐鲁网   | <http://v.iqilu.com/>          |✓| | |
-| QQ<br/>腾讯视频 | <http://v.qq.com/>      |✓| | |
-| 阡陌视频 | <http://qianmo.com/>           |✓| | |
-| THVideo  | <http://thvideo.tv/>           |✓| | |
-| Sina<br/>新浪视频<br/>微博秒拍视频 | <http://video.sina.com.cn/><br/><http://video.weibo.com/> |✓| | |
-| Sohu<br/>搜狐视频 | <http://tv.sohu.com/> |✓| | |
-| 天天动听 | <http://www.dongting.com/>     | | |✓|
-| **Tudou<br/>土豆** | <http://www.tudou.com/> |✓| | |
-| 虾米     | <http://www.xiami.com/>        | | |✓|
-| 阳光卫视 | <http://www.isuntv.com/>       |✓| | |
-| **音悦Tai** | <http://www.yinyuetai.com/> |✓| | |
-| **Youku<br/>优酷** | <http://www.youku.com/> |✓| | |
-| 战旗TV   | <http://www.zhanqi.tv/lives>   |✓| | |
-| 央视网   | <http://www.cntv.cn/>          |✓| | |
-| 花瓣     | <http://huaban.com/>           | |✓| |
-| Naver<br/>네이버 | <http://tvcast.naver.com/>     |✓| | |
+| PPTV聚力 | <https://www.pptv.com/>         |✓| | |
+| 齐鲁网   | <https://v.iqilu.com/>          |✓| | |
+| QQ<br/>腾讯视频 | <https://v.qq.com/>      |✓| | |
+| 企鹅直播 | <https://live.qq.com/>          |✓| | |
+| Sina<br/>新浪视频<br/>微博秒拍视频 | <https://video.sina.com.cn/><br/><https://video.weibo.com/> |✓| | |
+| Sohu<br/>搜狐视频 | <https://tv.sohu.com/> |✓| | |
+| **Tudou<br/>土豆** | <https://www.tudou.com/> |✓| | |
+| 阳光卫视 | <https://www.isuntv.com/>       |✓| | |
+| **Youku<br/>优酷** | <https://www.youku.com/> |✓| | |
+| 战旗TV   | <https://www.zhanqi.tv/lives>   |✓| | |
+| 央视网   | <https://www.cntv.cn/>          |✓| | |
+| Naver<br/>네이버 | <https://tvcast.naver.com/>     |✓| | |
+| 芒果TV   | <https://www.mgtv.com/>         |✓| | |
+| 火猫TV   | <https://www.huomao.com/>       |✓| | |
+| 阳光宽频网 | <https://www.365yg.com/>      |✓| | |
+| 西瓜视频 | <https://www.ixigua.com/>      |✓| | |
+| 新片场 | <https://www.xinpianchang.com/>      |✓| | |
+| 快手 | <https://www.kuaishou.com/>      |✓|✓| |
+| 抖音 | <https://www.douyin.com/>      |✓| | |
+| TikTok | <https://www.tiktok.com/>      |✓| | |
+| 中国体育(TV) | <https://v.zhibo.tv/> </br><https://video.zhibo.tv/>    |✓| | |
+| 知乎 | <https://www.zhihu.com/>      |✓| | |
 
 For all other sites not on the list, the universal extractor will take care of finding and downloading interesting resources from the page.
 
@@ -381,19 +462,13 @@ For all other sites not on the list, the universal extractor will take care of f
 
 If something is broken and `you-get` can't get you things you want, don't panic. (Yes, this happens all the time!)
 
-Check if it's already a known problem on <https://github.com/soimort/you-get/wiki/Known-Bugs>, and search on the [list of open issues](https://github.com/soimort/you-get/issues). If it has not been reported yet, open a new issue, with detailed command-line output attached.
+Check if it's already a known problem on <https://github.com/soimort/you-get/wiki/Known-Bugs>. If not, follow the guidelines on [how to report an issue](https://github.com/soimort/you-get/blob/develop/CONTRIBUTING.md).
 
 ## Getting Involved
 
-You can reach us on the Gitter channel [#soimort/you-get](https://gitter.im/soimort/you-get) (here's how you [set up your IRC client](http://irc.gitter.im) for Gitter). If you have a quick question regarding `you-get`, ask it there.
+You can reach us on the Gitter channel [#soimort/you-get](https://gitter.im/soimort/you-get) (here's how you [set up your IRC client](https://irc.gitter.im) for Gitter). If you have a quick question regarding `you-get`, ask it there.
 
-All kinds of pull requests are welcome. However, there are a few guidelines to follow:
-
-* The [`develop`](https://github.com/soimort/you-get/tree/develop) branch is where your pull request should go.
-* Remember to rebase.
-* Document your PR clearly, and if applicable, provide some sample links for reviewers to test with.
-* Write well-formatted, easy-to-understand commit messages. If you don't know how, look at existing ones.
-* We will not ask you to sign a CLA, but you must assure that your code can be legally redistributed (under the terms of the MIT license).
+If you are seeking to report an issue or contribute, please make sure to read [the guidelines](https://github.com/soimort/you-get/blob/develop/CONTRIBUTING.md) first.
 
 ## Legal Issues
 
@@ -417,6 +492,6 @@ We only ship the code here, and how you are going to use it is left to your own 
 
 ## Authors
 
-Made by [@soimort](https://github.com/soimort), who is in turn powered by :coffee:, :pizza: and :ramen:.
+Made by [@soimort](https://github.com/soimort), who is in turn powered by :coffee:, :beer: and :ramen:.
 
 You can find the [list of all contributors](https://github.com/soimort/you-get/graphs/contributors) here.
